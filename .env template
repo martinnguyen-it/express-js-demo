@@ -1,0 +1,20 @@
+// nguyenthanhtam
+
+LOCAL_PORT=8000
+NODE_ENV=development
+
+DB=mongodb+srv://martin:<PASSWORD>@martin.s7fhxpo.mongodb.net/natours?retryWrites=true&w=majority
+DB_LOCAL=mongodb://localhost:27017/natours
+DB_PASSWORD=aQiOqbsuvfV0u1sG
+
+JWT_SECRET=5CB166F3F0B94CB1D1BA9C63A35277F88AA75218E51758745BDC9A57F1A54789
+JWT_EXPIRES_IN=90d
+
+COOKIE_EXPIRES_IN=1
+
+EMAIL_USERNAME=547592ac9ede55
+EMAIL_PASSWORD=b492bbed122b91
+EMAIL_HOST=sandbox.smtp.mailtrap.io
+EMAIL_PORT=25
+
+EMAIL_FROM=tam.bhsoft@gmail.com
