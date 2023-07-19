@@ -66,6 +66,9 @@ exports.getAll = (Model, populateOptions) =>
         if (populateOptions && !isEmpty(populateOptions))
             query = query.populate(populateOptions);
 
+        const len = await Model.countDocuments({
+            secretTour: { $ne: true },
+        });
         const features = new APIFeatures(query, req.query)
             .filter()
             .sort()
@@ -75,7 +78,7 @@ exports.getAll = (Model, populateOptions) =>
 
         res.status(200).json({
             status: 'success',
-            len: docs.length,
+            len: len,
             data: docs,
         });
     });

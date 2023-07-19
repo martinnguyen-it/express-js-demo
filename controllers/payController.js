@@ -106,7 +106,7 @@ exports.vnpayReturn = catchAsync(async (req, res, next) => {
     const signData = querystring.stringify(vnp_Params, { encode: false });
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
-    if (secureHash === signed) {
+    if (secureHash === signed && vnp_Params.vnp_ResponseCode === '00') {
         const doc = await Booking.findOneAndUpdate(
             { tradingCode: vnp_Params.vnp_TxnRef },
             { paid: true },
@@ -118,6 +118,6 @@ exports.vnpayReturn = catchAsync(async (req, res, next) => {
         }
         res.status(200).json({ status: 'success' });
     } else {
-        res.status(404).json({ status: 'fail' });
+        res.status(405).json({ status: 'fail' });
     }
 });
