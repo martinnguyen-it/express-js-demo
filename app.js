@@ -8,15 +8,46 @@ const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const cors = require('cors');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const payRouter = require('./routes/payRoutes');
 const AppError = require('./utils/appError');
 const handleError = require('./controllers/errorController');
 
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'REST API Documentation',
+        },
+        components: {
+            securitySchemas: {
+                bearerAuth: {
+                    type: 'http',
+                    schema: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
+        },
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
+    },
+    apis: ['./routes/*.js', './utils/swagger/*.js'],
+};
+const swaggerSpec = swaggerJsdoc(options);
+
 // use it before all route definitions
 const app = express();
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use(cors({ origin: '*' }));
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -59,6 +90,7 @@ app.use(
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/pay', payRouter);
 
 app.all('*', (req, res, next) => {
     // res.status(404).json({

@@ -11,6 +11,11 @@ exports.setTourUserId = (req, res, next) => {
     next();
 };
 
+exports.getReviewFilter = (req, res, next) => {
+    if (req.params.tourId) req.filter = { tour: req.params.tourId };
+    next();
+};
+
 exports.getAllReviews = factory.getAll(Review);
 exports.getReview = factory.getOne(Review);
 exports.createReview = factory.createOne(Review);

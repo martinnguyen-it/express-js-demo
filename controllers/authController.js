@@ -13,24 +13,25 @@ const signToken = (id) =>
 const createSendToken = (user, statusCode, res) => {
     const token = signToken(user._id);
 
-    const cookieOptions = {
-        expires: new Date(
-            Date.now() + process.env.COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
-        ),
-        httpOnly: true,
-    };
+    // const cookieOptions = {
+    //     expires: new Date(
+    //         Date.now() + process.env.COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    //     ),
+    //     httpOnly: true,
+    // };
 
-    if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+    // if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
 
-    res.cookie('jwt', token, cookieOptions);
+    // res.cookie('jwt', token, cookieOptions);
 
     user.password = undefined;
     res.status(statusCode).json({ status: 'success', token, data: { user } });
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
+    req.body.role = undefined;
     const newUser = await User.create(req.body);
-    const url = 'http://localhost:3000/me';
+    const url = `${process.env.FE_REACT_URL}/me`;
     await new Email(newUser, url).sendWelcome();
     createSendToken(newUser, 201, res);
 });
@@ -50,8 +51,7 @@ exports.login = catchAsync(async (req, res, next) => {
     if (!correct) {
         return next(new AppError('Incorrect email or password.', 401));
     }
-    const url = 'http://localhost:3000/me';
-    await new Email(user, url).sendWelcome();
+
     createSendToken(user, 200, res);
 });
 
@@ -68,7 +68,7 @@ exports.isLoggedIn = catchAsync(async (req, res, next) => {
         return next(new AppError('Your are not logged in.', 401));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id);
 
@@ -99,8 +99,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     if (!user) {
         return next(new AppError('There is no user with that email.', 404));
     }
-    // const resetToken = user.createPasswordResetToken();
+    const resetToken = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
+
+    const url = `${process.env.FE_REACT_URL}/auth/reset-password/${resetToken}`;
 
     // const resetURL = `${req.protocol}://${req.get(
     //     'host',
@@ -108,11 +110,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     // const message = `Forgot your password? Submit a PATCH request with your new password and password confirm to: ${resetURL}.\nIf you didn't  forget your password, please ignore this email.`;
 
     try {
-        // await sendEmail({
-        //     email: user.email,
-        //     subject: 'Reset Password',
-        //     message,
-        // });
+        await new Email(user, url).sendPasswordReset();
 
         res.status(200).json({
             status: 'success',

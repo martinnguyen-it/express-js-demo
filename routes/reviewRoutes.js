@@ -6,12 +6,18 @@ const router = express.Router({ mergeParams: true });
 
 router
     .route('/')
-    .get(reviewController.getAllReviews)
+    .get(reviewController.getReviewFilter, reviewController.getAllReviews)
     .post(
         authController.isLoggedIn,
         reviewController.setTourUserId,
         reviewController.createReview,
     );
+
+router.use(authController.isLoggedIn);
+router
+    .route('/me/:id')
+    .delete(reviewController.deleteReviewMe)
+    .patch(reviewController.updateReviewMe);
 
 router
     .route('/:id')
@@ -26,11 +32,4 @@ router
         authController.redirectTo('admin'),
         reviewController.updateReview,
     );
-
-router.use(authController.isLoggedIn);
-router
-    .route('/me/:id')
-    .delete(reviewController.deleteReviewMe)
-    .patch(reviewController.updateReviewMe);
-
 module.exports = router;

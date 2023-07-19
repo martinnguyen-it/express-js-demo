@@ -7,12 +7,19 @@ module.exports = class Email {
         this.to = user.email;
         this.firstName = user.name.split(' ')[0];
         this.url = url;
-        this.from = `Martin Nguyen <${process.env.EMAIL_FROM}>`;
+        this.from = `Nguyen Thanh Tam <${process.env.EMAIL_FROM}>`;
     }
 
     newTransport() {
         if (process.env.NODE_ENV === 'production') {
-            return 1;
+            return nodemailer.createTransport({
+                service: 'SendGrid',
+                host: process.env.SENDGRID_HOST,
+                auth: {
+                    user: process.env.SENDGRID_USERNAME,
+                    pass: process.env.SENDGRID_PASSWORD,
+                },
+            });
         }
         return nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
@@ -33,7 +40,6 @@ module.exports = class Email {
                 subject,
             },
         );
-        console.log('🚀 ~ file: email.js:36 ~ Email ~ send ~ html:', html);
 
         const mailOptions = {
             from: this.from,
@@ -48,5 +54,12 @@ module.exports = class Email {
 
     async sendWelcome() {
         await this.send('welcome', 'Welcome to Natour');
+    }
+
+    async sendPasswordReset() {
+        await this.send(
+            'passwordReset',
+            'Your password reset (valid for only 10 minutes)',
+        );
     }
 };

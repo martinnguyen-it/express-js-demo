@@ -45,6 +45,8 @@ router
         tourController.createTour,
     );
 
+router.route('/me').get(authController.isLoggedIn, tourController.getMyTour);
+
 router
     .route('/:id')
     .get(tourController.getTour)

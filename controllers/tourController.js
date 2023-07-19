@@ -86,6 +86,11 @@ exports.getAllTours = factory.getAll(Tour, { path: 'reviews' });
 //     });
 // });
 
+exports.getMyTour = factory.getByUserId(Tour, {
+    path: 'reviews',
+    fields: 'review rating user',
+});
+
 exports.getTour = factory.getOne(Tour, {
     path: 'reviews',
     fields: 'review rating user',
@@ -242,7 +247,7 @@ exports.getDistances = catchAsync(async (req, res, next) => {
     if (!lat || !lng) {
         next(
             new AppError(
-                'Please provide latitutr and longitude in the format lat,lng.',
+                'Please provide latitute and longitude in the format lat,lng.',
                 400,
             ),
         );
