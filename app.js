@@ -10,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const compression = require('compression');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -86,6 +87,7 @@ app.use(
 // app.use('/', (req, res) => {
 //     res.status(200).render('base');
 // });
+app.use(compression());
 
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
