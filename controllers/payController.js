@@ -1,7 +1,11 @@
+/* eslint-disable no-buffer-constructor */
 /* eslint-disable camelcase */
 const moment = require('moment');
 const querystring = require('qs');
 const crypto = require('crypto');
+const catchAsync = require('../utils/catchAsync');
+const Booking = require('../models/bookingModel');
+const AppError = require('../utils/appError');
 
 function sortObject(obj) {
     const sorted = {};
@@ -25,7 +29,7 @@ function sortObject(obj) {
     return sorted;
 }
 
-exports.createPaymentURL = (req, res, next) => {
+exports.createPaymentURL = catchAsync(async (req, res, next) => {
     process.env.TZ = 'Asia/Ho_Chi_Minh';
 
     const date = new Date();
@@ -42,7 +46,7 @@ exports.createPaymentURL = (req, res, next) => {
     let vnpUrl = process.env.VNPAY_URL;
     const returnUrl = process.env.VNPAY_RETURN_URL;
 
-    const orderId = moment(date).format('DDHHmmss');
+    const orderId = `${req.user.id}${createDate}`;
     const { amount } = req.body;
     const { bankCode } = req.body;
 
@@ -72,10 +76,48 @@ exports.createPaymentURL = (req, res, next) => {
 
     const signData = querystring.stringify(vnp_Params, { encode: false });
     const hmac = crypto.createHmac('sha512', secretKey);
-    // eslint-disable-next-line no-buffer-constructor
     const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
     vnp_Params.vnp_SecureHash = signed;
     vnpUrl += `?${querystring.stringify(vnp_Params, { encode: false })}`;
 
+    const booking = {
+        tour: req.body.tourId,
+        user: req.user.id,
+        price: amount,
+        tradingCode: orderId,
+    };
+    await Booking.create(booking);
+
     res.status(200).json({ status: 'success', data: { vnpUrl } });
-};
+});
+
+exports.vnpayReturn = catchAsync(async (req, res, next) => {
+    let vnp_Params = req.query;
+
+    const secureHash = req.query.vnp_SecureHash;
+
+    delete vnp_Params.vnp_SecureHash;
+    delete vnp_Params.vnp_SecureHashType;
+
+    vnp_Params = sortObject(vnp_Params);
+
+    const secretKey = process.env.VNPAY_HASH_SECRET;
+
+    const signData = querystring.stringify(vnp_Params, { encode: false });
+    const hmac = crypto.createHmac('sha512', secretKey);
+    const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
+    if (secureHash === signed) {
+        const doc = await Booking.findOneAndUpdate(
+            { tradingCode: vnp_Params.vnp_TxnRef },
+            { paid: true },
+            { new: true, runValidators: true },
+        );
+
+        if (!doc) {
+            return next(new AppError('Not found.', 404));
+        }
+        res.status(200).json({ status: 'success' });
+    } else {
+        res.status(404).json({ status: 'fail' });
+    }
+});

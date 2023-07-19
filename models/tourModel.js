@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const moment = require('moment');
 const slugify = require('slugify');
 
 const tourSchema = new mongoose.Schema(
@@ -133,7 +134,10 @@ tourSchema.virtual('reviews', {
 });
 
 tourSchema.pre('save', function (next) {
-    this.slug = slugify(this.name, { lower: true });
+    const date = new Date();
+    this.slug = `${slugify(this.name, { lower: true })}-${moment(date).format(
+        'DDHHmmss',
+    )}`;
     next();
 });
 

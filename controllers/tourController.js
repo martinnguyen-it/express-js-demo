@@ -1,9 +1,11 @@
 const sharp = require('sharp');
 const multer = require('multer');
+const { map } = require('lodash');
 const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handleFactory');
 const AppError = require('../utils/appError');
+const Booking = require('../models/bookingModel');
 
 const multerStorage = multer.memoryStorage();
 
@@ -86,9 +88,38 @@ exports.getAllTours = factory.getAll(Tour, { path: 'reviews' });
 //     });
 // });
 
-exports.getMyTour = factory.getByUserId(Tour, {
+exports.getMyTour = catchAsync(async (req, res, next) => {
+    const booking = await Booking.find({
+        user: req.user.id,
+        paid: true,
+    }).populate({
+        path: 'tour',
+    });
+
+    if (!booking) {
+        return next(new AppError('No tour found.', 404));
+    }
+
+    const respon = map(booking, (item) => item.tour);
+    res.status(200).json({ status: 'success', data: respon });
+});
+
+exports.getTour = factory.getOne(Tour, {
     path: 'reviews',
     fields: 'review rating user',
+});
+
+exports.getTourBySlug = catchAsync(async (req, res, next) => {
+    const tour = await Tour.findOne({ slug: req.params.slug }).populate({
+        path: 'reviews',
+        fields: 'review rating user',
+    });
+
+    if (!tour) {
+        return next(new AppError('No tour found.', 404));
+    }
+
+    res.status(200).json({ status: 'success', data: tour });
 });
 
 exports.getTour = factory.getOne(Tour, {

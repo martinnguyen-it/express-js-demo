@@ -4,6 +4,7 @@ const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handleFactory');
+const { filterObj } = require('../utils');
 
 const multerStorage = multer.memoryStorage();
 
@@ -31,14 +32,6 @@ exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
 
     next();
 });
-
-const filterObj = (obj, ...allowFields) => {
-    const newObj = {};
-    Object.keys(obj).forEach((key) => {
-        if (allowFields.includes(key)) newObj[key] = obj[key];
-    });
-    return newObj;
-};
 
 exports.getAllUsers = factory.getAll(User);
 

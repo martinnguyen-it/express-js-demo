@@ -10,4 +10,6 @@ router.post(
     payController.createPaymentURL,
 );
 
+router.get('/vnpay_return', payController.vnpayReturn);
+
 module.exports = router;
