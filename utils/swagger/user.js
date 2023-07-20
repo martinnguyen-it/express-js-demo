@@ -123,3 +123,29 @@
  *       200:
  *         description: Success
  */
+
+/**
+ * @openapi
+ * /api/v1/users/update-me:
+ *  patch:
+ *     tags:
+ *     - Users
+ *     summary: Update user information
+ *     requestBody:
+ *      content:
+ *        application/json:
+ *         schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                   type: string
+ *                   example: 'you@gmail.com'
+ *              name:
+ *                   type: string
+ *                   example: 'Nguyen Van A'
+ *              photo:
+ *                   type: file
+ *     responses:
+ *       200:
+ *         description: Success
+ */
