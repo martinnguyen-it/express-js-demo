@@ -1,99 +1,19 @@
-const sharp = require('sharp');
-const multer = require('multer');
 const { map } = require('lodash');
 const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
-const factory = require('./handleFactory');
-const AppError = require('../utils/appError');
-const Booking = require('../models/bookingModel');
+const AppError = require('../helpers/appError');
+const tourService = require('../services/tourService');
+const bookingService = require('../services/bookingService');
 
-const multerStorage = multer.memoryStorage();
-
-const multerFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image')) {
-        cb(null, true);
-    } else {
-        cb(
-            new AppError('Not an image! Please upload only images.', 400),
-            false,
-        );
-    }
-};
-
-const upload = multer({
-    storage: multerStorage,
-    fileFilter: multerFilter,
-});
-
-exports.uploadTourImages = upload.fields([
-    { name: 'imageCover', maxCount: 1 },
-    { name: 'images', maxCount: 3 },
-]);
-
-// upload.single('image') req.file
-// upload.array('images', 5) req.files
-
-exports.resizeTourImages = catchAsync(async (req, res, next) => {
-    if (!req.files.imageCover || !req.files.images) return next();
-
-    // 1) Cover image
-    req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
-    await sharp(req.files.imageCover[0].buffer)
-        .resize(2000, 1333)
-        .toFormat('jpeg')
-        .jpeg({ quality: 90 })
-        .toFile(`public/img/tours/${req.body.imageCover}`);
-
-    // 2) Images
-    req.body.images = [];
-
-    await Promise.all(
-        req.files.images.map(async (file, i) => {
-            const filename = `tour-${req.params.id}-${Date.now()}-${
-                i + 1
-            }.jpeg`;
-
-            await sharp(file.buffer)
-                .resize(2000, 1333)
-                .toFormat('jpeg')
-                .jpeg({ quality: 90 })
-                .toFile(`public/img/tours/${filename}`);
-
-            req.body.images.push(filename);
-        }),
-    );
-
-    next();
-});
-
-exports.aliasTopTour = async (req, res, next) => {
-    req.query.limit = '5';
-    req.query.sort = 'price,-ratingsAverage';
-    next();
-};
-
-exports.getAllTours = factory.getAll(Tour, { path: 'reviews' });
-// exports.getAllTours = catchAsync(async (req, res, next) => {
-//     const features = new APIFeatures(Tour.find().populate('reviews'), req.query)
-//         .filter()
-//         .sort()
-//         .limitFields()
-//         .pagination();
-//     const tours = await features.query;
-
-//     res.status(200).json({
-//         status: 'success',
-//         len: tours.length,
-//         data: tours,
-//     });
-// });
+exports.getAllTours = tourService.getAll(Tour, { path: 'reviews' });
 
 exports.getMyTour = catchAsync(async (req, res, next) => {
-    const booking = await Booking.find({
-        user: req.user.id,
-        paid: true,
-    }).populate({
-        path: 'tour',
+    const booking = await bookingService.getAllBooking({
+        propQueryMongo: {
+            user: req.user.id,
+            paid: true,
+        },
+        reqQuery: req.query,
     });
 
     if (!booking) {
@@ -104,16 +24,13 @@ exports.getMyTour = catchAsync(async (req, res, next) => {
     res.status(200).json({ status: 'success', data: respon });
 });
 
-exports.getTour = factory.getOne(Tour, {
+exports.getTour = tourService.getOne(Tour, {
     path: 'reviews',
     fields: 'review rating user',
 });
 
 exports.getTourBySlug = catchAsync(async (req, res, next) => {
-    const tour = await Tour.findOne({ slug: req.params.slug }).populate({
-        path: 'reviews',
-        fields: 'review rating user',
-    });
+    const tour = await tourService.findOneByOptions({ slug: req.params.slug });
 
     if (!tour) {
         return next(new AppError('No tour found.', 404));
@@ -122,57 +39,14 @@ exports.getTourBySlug = catchAsync(async (req, res, next) => {
     res.status(200).json({ status: 'success', data: tour });
 });
 
-exports.getTour = factory.getOne(Tour, {
-    path: 'reviews',
-    fields: 'review rating user',
-});
-// exports.getTour = catchAsync(async (req, res, next) => {
-//     const tour = await Tour.findById(req.params.id).populate('reviews');
+exports.createTour = tourService.createOne(Tour);
 
-//     if (!tour) {
-//         return next(new AppError('No tour found with that ID.', 404));
-//     }
+exports.updateTour = tourService.updateOne(Tour);
 
-//     res.status(200).json({ status: 'success', data: tour });
-// });
-
-exports.createTour = factory.createOne(Tour);
-// exports.createTour = catchAsync(async (req, res, next) => {
-//     const newTour = await Tour.create(req.body);
-//     res.status(201).json({ status: 'success', data: newTour });
-// });
-
-exports.updateTour = factory.updateOne(Tour);
-// exports.updateTour = catchAsync(async (req, res, next) => {
-//     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-//         new: true,
-//         runValidators: true,
-//     });
-
-//     if (!tour) {
-//         return next(new AppError('No tour found with that ID.', 404));
-//     }
-
-//     res.status(200).json({
-//         status: 'success',
-//         data: { tour },
-//     });
-// });
-
-exports.deleteTour = factory.deleteOne(Tour);
-
-// exports.deleteTour = catchAsync(async (req, res, next) => {
-//     const tour = await Tour.findByIdAndDelete(req.params.id);
-
-//     if (!tour) {
-//         return next(new AppError('No tour found with that ID.', 404));
-//     }
-
-//     res.status(204).json({ status: 'success', data: null });
-// });
+exports.deleteTour = tourService.deleteOne(Tour);
 
 exports.getTourStats = catchAsync(async (req, res, next) => {
-    const statistical = await Tour.aggregate([
+    const statistical = await tourService.staticCollection([
         // {
         //     $match: { ratingsAverage: { $gte: 4.7 } },
         // },
@@ -195,13 +69,14 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
         //     },
         // },
     ]);
+
     res.status(200).json({ status: 'success', data: { statistical } });
 });
 
 exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
     const year = req.params.year * 1;
 
-    const plan = await Tour.aggregate([
+    const plan = await tourService.staticCollection([
         {
             $unwind: '$startDates',
         },
@@ -256,7 +131,7 @@ exports.getToursWithin = catchAsync(async (req, res, next) => {
 
     const radius = unit === 'km' ? distance / 6378.1 : distance / 3963.2;
 
-    const tours = await Tour.find({
+    const tours = await tourService.findAllByOptions({
         startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
     });
 
@@ -284,7 +159,7 @@ exports.getDistances = catchAsync(async (req, res, next) => {
         );
     }
 
-    const distances = await Tour.aggregate([
+    const distances = await tourService.staticCollection([
         {
             $geoNear: {
                 near: {

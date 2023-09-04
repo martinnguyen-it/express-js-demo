@@ -4,8 +4,8 @@ const moment = require('moment');
 const querystring = require('qs');
 const crypto = require('crypto');
 const catchAsync = require('../utils/catchAsync');
-const Booking = require('../models/bookingModel');
-const AppError = require('../utils/appError');
+const AppError = require('../helpers/appError');
+const bookingService = require('../services/bookingService');
 
 function sortObject(obj) {
     const sorted = {};
@@ -86,7 +86,7 @@ exports.createPaymentURL = catchAsync(async (req, res, next) => {
         price: amount,
         tradingCode: orderId,
     };
-    await Booking.create(booking);
+    await bookingService.createBooking(booking);
 
     res.status(200).json({ status: 'success', data: { vnpUrl } });
 });
@@ -107,11 +107,10 @@ exports.vnpayReturn = catchAsync(async (req, res, next) => {
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
     if (secureHash === signed && vnp_Params.vnp_ResponseCode === '00') {
-        const doc = await Booking.findOneAndUpdate(
-            { tradingCode: vnp_Params.vnp_TxnRef },
-            { paid: true },
-            { new: true, runValidators: true },
-        );
+        const doc = await bookingService.updateBooking({
+            query: { tradingCode: vnp_Params.vnp_TxnRef },
+            data: { paid: true },
+        });
 
         if (!doc) {
             return next(new AppError('Not found.', 404));

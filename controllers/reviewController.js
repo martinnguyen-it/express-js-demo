@@ -1,29 +1,16 @@
-const isArray = require('lodash/isArray');
 const Review = require('../models/reviewModel');
-const factory = require('./handleFactory');
 const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
+const AppError = require('../helpers/appError');
+const reviewService = require('../services/reviewService');
 
-exports.setTourUserId = (req, res, next) => {
-    if (!req.body.tour) req.body.tour = req.params.tourId;
-    if (isArray(req.body.tour)) req.body.tour = req.body.tour[0];
-    req.body.user = req.user.id;
-    next();
-};
-
-exports.getReviewFilter = (req, res, next) => {
-    if (req.params.tourId) req.filter = { tour: req.params.tourId };
-    next();
-};
-
-exports.getAllReviews = factory.getAll(Review);
-exports.getReview = factory.getOne(Review);
-exports.createReview = factory.createOne(Review);
-exports.deleteReview = factory.deleteOne(Review);
-exports.updateReview = factory.updateOne(Review);
+exports.getAllReviews = reviewService.getAll(Review);
+exports.getReview = reviewService.getOne(Review);
+exports.createReview = reviewService.createOne(Review);
+exports.deleteReview = reviewService.deleteOne(Review);
+exports.updateReview = reviewService.updateOne(Review);
 
 exports.deleteReviewMe = catchAsync(async (req, res, next) => {
-    const doc = await Review.find({
+    const doc = await reviewService.deleteReview({
         _id: req.params.id,
         user: req.user.id,
     });
@@ -36,17 +23,13 @@ exports.deleteReviewMe = catchAsync(async (req, res, next) => {
 });
 
 exports.updateReviewMe = catchAsync(async (req, res, next) => {
-    const doc = await Review.findOneAndUpdate(
-        {
-            id: req.params.id,
+    const doc = await reviewService.updateReview({
+        query: {
+            _id: req.params.id,
             user: req.user.id,
         },
-        req.body,
-        {
-            new: true,
-            runValidators: true,
-        },
-    );
+        data: req.body,
+    });
 
     if (!doc) {
         return next(new AppError('No document found with that ID.', 404));

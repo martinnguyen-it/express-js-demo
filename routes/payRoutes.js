@@ -1,12 +1,12 @@
 const express = require('express');
-const authController = require('../controllers/authController');
 const payController = require('../controllers/payController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
 router.post(
     '/create_payment_url',
-    authController.isLoggedIn,
+    authMiddleware.isLoggedIn,
     payController.createPaymentURL,
 );
 

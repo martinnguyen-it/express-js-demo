@@ -1,19 +1,20 @@
 const express = require('express');
-const authController = require('../controllers/authController');
+const authMiddleware = require('../middlewares/authMiddleware');
 const reviewController = require('../controllers/reviewController');
+const reviewMiddleware = require('../middlewares/reviewMiddleware');
 
 const router = express.Router({ mergeParams: true });
 
 router
     .route('/')
-    .get(reviewController.getReviewFilter, reviewController.getAllReviews)
+    .get(reviewMiddleware.getReviewFilter, reviewController.getAllReviews)
     .post(
-        authController.isLoggedIn,
-        reviewController.setTourUserId,
+        authMiddleware.isLoggedIn,
+        reviewMiddleware.setTourUserId,
         reviewController.createReview,
     );
 
-router.use(authController.isLoggedIn);
+router.use(authMiddleware.isLoggedIn);
 router
     .route('/me/:id')
     .delete(reviewController.deleteReviewMe)
@@ -23,13 +24,13 @@ router
     .route('/:id')
     .get(reviewController.getReview)
     .delete(
-        authController.isLoggedIn,
-        authController.redirectTo('admin'),
+        authMiddleware.isLoggedIn,
+        authMiddleware.redirectTo('admin', 'guide'),
         reviewController.deleteReview,
     )
     .patch(
-        authController.isLoggedIn,
-        authController.redirectTo('admin'),
+        authMiddleware.isLoggedIn,
+        authMiddleware.redirectTo('admin'),
         reviewController.updateReview,
     );
 module.exports = router;

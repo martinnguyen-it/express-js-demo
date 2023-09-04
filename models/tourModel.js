@@ -73,11 +73,7 @@ const tourSchema = new mongoose.Schema(
             type: String,
         },
         images: [String],
-        createdAt: {
-            type: Date,
-            default: Date.now(),
-            select: false,
-        },
+
         startDates: [Date],
         secretTour: {
             type: Boolean,
@@ -116,6 +112,7 @@ const tourSchema = new mongoose.Schema(
     {
         toJSON: { virtuals: true },
         toObject: { virtuals: true },
+        timestamps: true,
     },
 );
 
@@ -135,6 +132,7 @@ tourSchema.virtual('reviews', {
 
 tourSchema.pre('save', function (next) {
     const date = new Date();
+    // this.price *= 20000;
     this.slug = `${slugify(this.name, { lower: true })}-${moment(date).format(
         'DDHHmmss',
     )}`;
