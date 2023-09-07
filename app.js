@@ -31,10 +31,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(helmet());
 
 if (process.env.NODE_ENV !== 'production') {
-    console.log(
-        '🚀 ~ file: app.js:34 ~ process.env.NODE_ENV:',
-        process.env.NODE_ENV,
-    );
     app.use(morgan('dev'));
 }
 

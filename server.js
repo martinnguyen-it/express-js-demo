@@ -15,6 +15,9 @@ process.on('uncaughtException', (err) => {
 require('./mongoDB/config');
 
 const port = process.env.PORT || process.env.LOCAL_PORT || 4000;
-app.listen(port, () => {
+
+const server = app.listen(port, () => {
     console.log(`listening on port ${port}`);
 });
+
+module.exports = server;

@@ -120,3 +120,17 @@ exports.vnpayReturn = catchAsync(async (req, res, next) => {
         res.status(405).json({ status: 'fail' });
     }
 });
+
+exports.payViaPaypal = catchAsync(async (req, res, next) => {
+    const { tourId, amount, orderId } = req.body;
+
+    const booking = {
+        tour: tourId,
+        user: req.user.id,
+        price: amount,
+        tradingCode: orderId,
+        paid: true,
+    };
+    await bookingService.createBooking(booking);
+    res.status(200).json({ status: 'success' });
+});
