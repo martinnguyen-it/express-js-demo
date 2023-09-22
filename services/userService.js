@@ -12,6 +12,11 @@ module.exports = class userService extends commonService {
         return user;
     }
 
+    static async getUserById(id) {
+        const user = await User.findById(id);
+        return user;
+    }
+
     static async getUser(data) {
         const user = await User.findOne(data);
         return user;

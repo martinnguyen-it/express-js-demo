@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const AppError = require('../helpers/appError');
 const catchAsync = require('../utils/catchAsync');
-const User = require('../models/userModel');
+const userService = require('../services/userService');
 
 exports.isLoggedIn = catchAsync(async (req, res, next) => {
     let token;
@@ -16,9 +16,9 @@ exports.isLoggedIn = catchAsync(async (req, res, next) => {
         return next(new AppError('Your are not logged in.', 401));
     }
 
-    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    const user = await User.findById(decoded.id);
+    const user = await userService.getUserById(decoded.id);
 
     if (!user) {
         return next(new AppError('Invalid token.', 401));

@@ -10,31 +10,49 @@ module.exports = class authService {
         await new Email(newUser, url).sendWelcome();
     }
 
-    static signToken(id) {
-        return jwt.sign({ id }, process.env.JWT_SECRET, {
-            expiresIn: process.env.JWT_EXPIRES_IN,
+    static signAccessToken(id) {
+        return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, {
+            expiresIn: process.env.ACCESS_EXPIRES_IN,
         });
     }
 
-    static async createSendToken(user, statusCode, res) {
-        const token = this.signToken(user.id);
+    static signRefreshToken(id) {
+        return jwt.sign({ id }, process.env.REFRESH_TOKEN_SECRET, {
+            expiresIn: process.env.REFRESH_EXPIRES_IN,
+        });
+    }
 
-        // const cookieOptions = {
-        //     expires: new Date(
-        //         Date.now() + process.env.COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
-        //     ),
-        //     httpOnly: true,
-        // };
+    static login(user, statusCode, res) {
+        const token = {
+            access_token: this.signAccessToken(user.id),
+            refresh_token: this.signRefreshToken(user.id),
+        };
 
-        // if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+        const cookieOptions = {
+            expires: new Date(
+                Date.now() +
+                    process.env.COOKIES_EXPIRES_IN * 24 * 60 * 60 * 1000,
+            ),
+            httpOnly: true,
+            sameSite: 'None',
+        };
 
-        // res.cookie('jwt', token, cookieOptions);
+        if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+        res.cookie('jwt', token.refresh_token, cookieOptions);
 
         user.password = undefined;
         res.status(statusCode).json({
             status: 'success',
-            token,
+            access_token: token.access_token,
             data: { user },
+        });
+    }
+
+    static async createSendToken(user, statusCode, res) {
+        const token = await this.signAccessToken(user.id);
+        res.status(statusCode).json({
+            access_token: token,
         });
     }
 };

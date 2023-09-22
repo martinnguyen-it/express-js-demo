@@ -10,9 +10,11 @@ const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const compression = require('compression');
+const cookieParser = require('cookie-parser');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const authRouter = require('./routes/authRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const payRouter = require('./routes/payRoutes');
 const AppError = require('./helpers/appError');
@@ -45,6 +47,7 @@ app.use('/api', limiter);
 
 // Body parser, parse JSON from req.body
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
@@ -63,8 +66,9 @@ app.use(
 // });
 app.use(compression());
 
-app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/pay', payRouter);
 

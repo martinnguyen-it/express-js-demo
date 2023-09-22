@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const catchAsync = require('../utils/catchAsync');
 const Email = require('../utils/email');
 const AppError = require('../helpers/appError');
@@ -16,7 +17,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 
     const url = `${process.env.FE_REACT_URL}/me`;
     await new Email(newUser, url).sendWelcome();
-    authService.createSendToken(newUser, 201, res);
+    authService.login(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -35,8 +36,40 @@ exports.login = catchAsync(async (req, res, next) => {
         return next(new AppError('Incorrect email or password.', 401));
     }
 
-    authService.createSendToken(user, 200, res);
+    authService.login(user, 200, res);
 });
+
+exports.refresh = catchAsync(async (req, res, next) => {
+    const { cookies } = req;
+
+    if (!(cookies && cookies.jwt))
+        return res.status(401).json({ message: 'Unauthorized' });
+
+    const refreshToken = cookies.jwt;
+
+    const decoded = await jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+    );
+
+    const user = await userService.getUserById(decoded.id);
+    if (!user) return res.status(401).json({ message: 'Unauthorized' });
+
+    authService.createSendToken(user, 201, res);
+});
+
+exports.logout = (req, res) => {
+    const { cookies } = req;
+    if (!(cookies && cookies.jwt)) return res.sendStatus(204); //No content
+
+    const cookieOptions = {
+        httpOnly: true,
+        sameSite: 'None',
+    };
+    if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+    res.clearCookie('jwt', cookieOptions);
+    res.json({ message: 'Cookie cleared' });
+};
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
     const user = await userService.getUser({ email: req.email });

@@ -20,7 +20,7 @@ const bookingSchema = new mongoose.Schema(
             type: String,
             require: [true, 'Booking must have a trading code.'],
         },
-        paid: Boolean,
+        paid: { type: Boolean, default: false },
     },
     { timestamps: true },
 );
