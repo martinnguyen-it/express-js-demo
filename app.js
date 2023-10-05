@@ -20,12 +20,17 @@ const payRouter = require('./routes/payRoutes');
 const AppError = require('./helpers/appError');
 const handleError = require('./helpers/errorHandler');
 const swaggerSpec = require('./utils/swagger');
+const corsOptions = require('./config/corsOptions');
 
 const app = express();
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use(cors({ origin: '*' }));
+if (process.env.NODE_ENV !== 'production') {
+    app.use(cors({ origin: '*' }));
+} else {
+    app.use(cors(corsOptions));
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -73,14 +78,6 @@ app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/pay', payRouter);
 
 app.all('*', (req, res, next) => {
-    // res.status(404).json({
-    //     status: 'fail',
-    //     message: `Can't not find ${req.originalUrl} on this server!`,
-    // });
-
-    // const err = new Error(`Can't not find ${req.originalUrl} on this server!`);
-    // err.status = 'fail';
-    // err.statusCode = 404;
     next(
         new AppError(`Can't not find ${req.originalUrl} on this server!`, 404),
     );

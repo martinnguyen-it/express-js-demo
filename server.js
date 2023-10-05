@@ -12,7 +12,7 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
-require('./mongoDB/config');
+require('./config/mongoDB');
 
 const port = process.env.PORT || process.env.LOCAL_PORT || 4000;
 
