@@ -8,6 +8,7 @@ module.exports = class authService {
         const newUser = await User.create(data);
         const url = `${process.env.FE_REACT_URL}/me`;
         await new Email(newUser, url).sendWelcome();
+        return newUser;
     }
 
     static signAccessToken(id) {
